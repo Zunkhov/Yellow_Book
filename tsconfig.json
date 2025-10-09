@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/adoptable-e2e"
+    },
+    {
+      "path": "./apps/adoptable"
+    }
+  ]
+}
