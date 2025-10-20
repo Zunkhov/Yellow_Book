@@ -8,6 +8,12 @@
     },
     {
       "path": "./apps/adoptable"
+    },
+    {
+      "path": "./apps/yb-api-e2e"
+    },
+    {
+      "path": "./apps/yb-api"
     }
   ]
 }

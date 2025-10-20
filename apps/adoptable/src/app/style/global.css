@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Зөвхөн хамгийн чухал variable-уудыг үлдээх */
+    --background: #ffffff;
+    --foreground: #171717;
+    --primary: #030213;
+    --border: rgba(0, 0, 0, 0.1);
+    --ring: #6b7280;
+  }
+
+  .dark {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #ffffff;
+    --border: rgba(255, 255, 255, 0.1);
+    --ring: #9ca3af;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Typography rules ижил хэвээр */
