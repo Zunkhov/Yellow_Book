@@ -1,6 +1,4 @@
-import { Search } from 'lucide-react';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
+import { SearchBar } from './search/SearchBar';
 
 export function Hero() {
   return (
@@ -18,22 +16,8 @@ export function Hero() {
           Discover local companies, services, and organizations in your area
         </p>
         
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Search companies, industries, or locations..."
-              className="pl-12 pr-20 py-4 text-lg w-full border-0 rounded-xl shadow-lg focus:ring-2 focus:ring-[#FFD700] bg-white"
-            />
-            <Button 
-              className="absolute right-2 top-2 bg-[#FFD700] hover:bg-[#FFD700]/90 text-[#333333] px-6 rounded-lg"
-            >
-              Search
-            </Button>
-          </div>
-        </div>
+        {/* Client Component */}
+        <SearchBar />
       </div>
     </section>
   );

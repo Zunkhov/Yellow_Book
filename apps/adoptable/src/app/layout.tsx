@@ -1,4 +1,4 @@
-import './style/global.css'
+import './web/style/global.css'
 
 export const metadata = {
   title: 'Welcome to ',

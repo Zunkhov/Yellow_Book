@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../shared-contract"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

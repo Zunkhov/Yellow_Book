@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model YellowBookEntry {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  phone       String
+  email       String
+  website     String?
+  
+  // Address fields
+  street      String
+  city        String
+  state       String
+  postalCode  String
+  country     String
+  
+  // Location
+  latitude    Decimal  @db.Decimal(10, 8)
+  longitude   Decimal  @db.Decimal(11, 8)
+  
+  // Categories
+  categories  String[]
+  
+  // Metadata (JSON field)
+  metadata    Json?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("yellow_book_entries")
+}
