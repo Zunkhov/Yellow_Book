@@ -1,0 +1,18 @@
+# k8s/base/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yellowbooks-config
+  namespace: yellowbooks
+data:
+  # API Config
+  NODE_ENV: "production"
+  API_PORT: "3333"
+  
+  # Database (non-sensitive)
+  DATABASE_HOST: "yellowbooks-db.xxxxxx.us-east-1.rds.amazonaws.com"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "yellowbooks"
+  
+  # Next.js Config
+  NEXT_PUBLIC_API_URL: "https://api.yellowbook.mn"

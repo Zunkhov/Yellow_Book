@@ -1,0 +1,53 @@
+# k8s/base/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yellowbooks-ingress
+  namespace: yellowbooks
+  annotations:
+    # AWS Load Balancer Controller annotations
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    
+    # Certificate ARN (will be set via CI/CD)
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERT_ID
+    
+    # Health check
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    
+    # Tags
+    alb.ingress.kubernetes.io/tags: Environment=production,Project=yellowbooks
+spec:
+  ingressClassName: alb
+  rules:
+  - host: yellowbook.mn
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: yb-api-service
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: yb-web-service
+            port:
+              number: 80
+  - host: api.yellowbook.mn
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: yb-api-service
+            port:
+              number: 80

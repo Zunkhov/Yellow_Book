@@ -1,0 +1,67 @@
+# k8s/base/api-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yb-api
+  namespace: yellowbooks
+  labels:
+    app: yb-api
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yb-api
+  template:
+    metadata:
+      labels:
+        app: yb-api
+        tier: backend
+    spec:
+      containers:
+      - name: api
+        image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/yellowbooks-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3333
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: yellowbooks-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: yellowbooks-config
+              key: API_PORT
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: yellowbooks-secrets
+              key: DATABASE_URL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: yellowbooks-secrets
+              key: JWT_SECRET
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3333
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3333
+          initialDelaySeconds: 10
+          periodSeconds: 5

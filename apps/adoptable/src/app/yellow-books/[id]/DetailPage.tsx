@@ -7,7 +7,6 @@ import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
-// Generate static params at build time (SSG)
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_URL}/api/yellow-books`, {

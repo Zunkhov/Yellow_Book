@@ -6,6 +6,8 @@ import { YellowBookEntry } from '@adoptable/shared-contract';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
+export const revalidate = 60;
+
 async function getEntries(): Promise<YellowBookEntry[]> {
   try {
     const res = await fetch(`${API_URL}/api/yellow-books`, {
@@ -23,7 +25,7 @@ async function getEntries(): Promise<YellowBookEntry[]> {
   }
 }
 
-// Loading Components
+
 function CategoriesSkeleton() {
   return (
     <section className="py-16 bg-white">
@@ -94,4 +96,3 @@ export default async function Home() {
   );
 }
 
-export const revalidate = 60;

@@ -1,0 +1,23 @@
+# k8s/base/migration-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prisma-migration
+  namespace: yellowbooks
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migration
+        image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/yellowbooks-api:latest
+        command: ["npx", "prisma", "migrate", "deploy"]
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: yellowbooks-secrets
+              key: DATABASE_URL
+      
