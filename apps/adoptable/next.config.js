@@ -10,6 +10,7 @@ const nextConfig = {
   nx: {
     svgr: false,
   },
+  output: 'standalone',
   async rewrites() {
     return [
       {

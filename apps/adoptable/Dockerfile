@@ -33,13 +33,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy built artifacts
-COPY --from=builder /app/dist/apps/adoptable/.next/standalone ./
-COPY --from=builder /app/dist/apps/adoptable/.next/static ./.next/static
-COPY --from=builder /app/dist/apps/adoptable/public ./public
+# Copy built artifacts (Next.js outputs to apps/adoptable/.next)
+COPY --from=builder /app/apps/adoptable/.next/standalone ./
+COPY --from=builder /app/apps/adoptable/.next/static ./apps/adoptable/.next/static
+COPY --from=builder /app/apps/adoptable/public ./apps/adoptable/public
 
 # Expose port
 EXPOSE 3000
 
 # Start server
-CMD ["node", "server.js"]
+CMD ["node", "apps/adoptable/server.js"]

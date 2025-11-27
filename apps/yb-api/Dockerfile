@@ -36,8 +36,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy built artifacts
-COPY --from=builder /app/dist/apps/yb-api ./
+# Copy built artifacts (webpack outputs to apps/yb-api/dist)
+COPY --from=builder /app/apps/yb-api/dist ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 
