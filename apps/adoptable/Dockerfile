@@ -3,15 +3,20 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy root package files
 COPY package*.json ./
+COPY nx.json tsconfig.base.json tsconfig.json ./
+
+# Copy package files for workspaces
 COPY apps/adoptable/package*.json ./apps/adoptable/
+COPY shared-contract/package*.json ./shared-contract/
 
 # Install dependencies
 RUN npm ci
 
 # Copy source code
-COPY . .
+COPY apps/adoptable ./apps/adoptable
+COPY shared-contract ./shared-contract
 
 # Build Next.js
 RUN npx nx build adoptable --prod
