@@ -3,9 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy root package files
+# Copy root config files
 COPY package*.json ./
-COPY nx.json tsconfig.base.json tsconfig.json ./
+COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js ./
 
 # Copy package files for workspaces
 COPY apps/yb-api/package*.json ./apps/yb-api/
@@ -25,8 +25,9 @@ RUN npx prisma generate
 # Sync Nx workspace
 RUN npx nx sync
 
-# Build
-RUN npx nx build yb-api --prod
+# Build (disable daemon in Docker)
+ENV NX_DAEMON=false
+RUN npx nx build yb-api --prod --skip-nx-cache
 
 # Production image
 FROM node:20-alpine AS runner

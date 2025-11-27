@@ -3,9 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy root package files
+# Copy root config files
 COPY package*.json ./
-COPY nx.json tsconfig.base.json tsconfig.json ./
+COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js ./
 
 # Copy package files for workspaces
 COPY apps/adoptable/package*.json ./apps/adoptable/
@@ -21,8 +21,9 @@ COPY shared-contract ./shared-contract
 # Sync Nx workspace
 RUN npx nx sync
 
-# Build Next.js
-RUN npx nx build adoptable --prod
+# Build Next.js (disable daemon in Docker)
+ENV NX_DAEMON=false
+RUN npx nx build adoptable --prod --skip-nx-cache
 
 # Production image
 FROM node:20-alpine AS runner
