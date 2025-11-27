@@ -12,7 +12,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: migration
-        image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/yellowbooks-api:latest
+        image: <AWS_ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-api:latest
         command: ["npx", "prisma", "migrate", "deploy"]
         env:
         - name: DATABASE_URL

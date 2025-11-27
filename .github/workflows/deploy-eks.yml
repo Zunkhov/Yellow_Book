@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: eu-north-1
   EKS_CLUSTER_NAME: yellowbooks-cluster
   ECR_API_REPO: yellowbooks-api
   ECR_WEB_REPO: yellowbooks-web
@@ -71,14 +71,23 @@ jobs:
           kubectl create secret generic yellowbooks-secrets \
             --from-literal=DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            --from-literal=REVALIDATION_SECRET="${{ secrets.REVALIDATION_SECRET }}" \
             --namespace=yellowbooks \
             --dry-run=client -o yaml | kubectl apply -f -
       
-      - name: 📦 Update ConfigMap with ECR registry
+      - name: 📦 Update manifests with ECR registry and image tags
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          sed -i "s|ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com|$ECR_REGISTRY|g" k8s/base/*.yaml
+          cd adoptable
+          # Update image references
+          sed -i "s|<AWS_ACCOUNT_ID>|${{ secrets.AWS_ACCOUNT_ID }}|g" k8s/base/*.yaml
+          sed -i "s|:latest|:${IMAGE_TAG}|g" k8s/base/*deployment.yaml k8s/base/migration-job.yaml
+          
+          # Update certificate ARN in ingress
+          sed -i "s|ACCOUNT_ID|${{ secrets.AWS_ACCOUNT_ID }}|g" k8s/base/ingress.yaml
+          sed -i "s|CERT_ID|${{ secrets.ACM_CERTIFICATE_ID }}|g" k8s/base/ingress.yaml
       
       - name: 🗄️ Run Database Migration
         run: |
@@ -88,6 +97,7 @@ jobs:
       
       - name: 🚀 Deploy to Kubernetes
         run: |
+          cd adoptable
           kubectl apply -f k8s/base/namespace.yaml
           kubectl apply -f k8s/base/configmap.yaml
           kubectl apply -f k8s/base/api-deployment.yaml

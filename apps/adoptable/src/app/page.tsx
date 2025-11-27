@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
 import { Hero } from './web/components/Hero';
-import { Categories } from './web/components/Categories';
-import { FeaturedCompanies } from './web/components/FeaturedCompanies';
+import { CategoriesServer } from './web/components/CategoriesServer';
+import { FeaturedCompaniesServer } from './web/components/FeaturedCompaniesServer';
 import { YellowBookEntry } from '@adoptable/shared-contract';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
+// ISR with 60 second revalidation
 export const revalidate = 60;
 
 async function getEntries(): Promise<YellowBookEntry[]> {
@@ -80,17 +81,17 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen">
-      {/* Hero - No Suspense (static) */}
+      {/* Hero - Static section */}
       <Hero />
 
-      {/* Categories - With Suspense */}
+      {/* Categories - Streamed with Suspense and ISR */}
       <Suspense fallback={<CategoriesSkeleton />}>
-        <Categories entries={entries} />
+        <CategoriesServer entries={entries} />
       </Suspense>
 
-      {/* Featured Companies - With Suspense */}
+      {/* Featured Companies - Streamed with Suspense and ISR */}
       <Suspense fallback={<FeaturedCompaniesSkeleton />}>
-        <FeaturedCompanies entries={entries} />
+        <FeaturedCompaniesServer entries={entries} />
       </Suspense>
     </main>
   );

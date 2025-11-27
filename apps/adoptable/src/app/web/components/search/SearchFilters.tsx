@@ -58,18 +58,53 @@ export function SearchFilters({
   };
 
   const handleCategoryChange = (cat: string) => {
-    setSelectedCategory(cat === selectedCategory ? '' : cat);
-    setTimeout(updateUrl, 100);
+    const newCategory = cat === selectedCategory ? '' : cat;
+    setSelectedCategory(newCategory);
+    
+    // Шууд URL шинэчлэх
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (newCategory) params.set('category', newCategory);
+    if (selectedCity) params.set('city', selectedCity);
+    if (sortBy) params.set('sort', sortBy);
+    
+    const url = params.toString()
+      ? `/yellow-books/search?${params.toString()}`
+      : '/yellow-books/search';
+    router.push(url);
   };
 
   const handleCityChange = (city: string) => {
-    setSelectedCity(city === selectedCity ? '' : city);
-    setTimeout(updateUrl, 100);
+    const newCity = city === selectedCity ? '' : city;
+    setSelectedCity(newCity);
+    
+    // Шууд URL шинэчлэх
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (newCity) params.set('city', newCity);
+    if (sortBy) params.set('sort', sortBy);
+    
+    const url = params.toString()
+      ? `/yellow-books/search?${params.toString()}`
+      : '/yellow-books/search';
+    router.push(url);
   };
 
   const handleSortChange = (sort: string) => {
     setSortBy(sort);
-    setTimeout(updateUrl, 100);
+    
+    // Шууд URL шинэчлэх
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (selectedCity) params.set('city', selectedCity);
+    if (sort) params.set('sort', sort);
+    
+    const url = params.toString()
+      ? `/yellow-books/search?${params.toString()}`
+      : '/yellow-books/search';
+    router.push(url);
   };
 
   const clearFilters = () => {
@@ -86,41 +121,44 @@ export function SearchFilters({
   return (
     <div className="space-y-6">
       {/* Search Input */}
-      <Card>
-        <CardHeader>
+      <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-[#FFD700]/10 to-transparent">
           <CardTitle className="text-lg flex items-center gap-2">
             <Search className="w-5 h-5 text-[#FFD700]" />
-            Search
+            Хайх
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Input
-            type="text"
-            placeholder="Search companies..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full"
-          />
+        <CardContent className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Компани хайх..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-10 border-2 focus:border-[#FFD700] transition-colors"
+            />
+          </div>
         </CardContent>
       </Card>
 
       {/* Categories */}
-      <Card>
-        <CardHeader>
+      <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-[#FFD700]/10 to-transparent">
           <CardTitle className="text-lg flex items-center gap-2">
             <Tag className="w-5 h-5 text-[#FFD700]" />
-            Categories
+            Категори
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 pt-4 max-h-80 overflow-y-auto">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => handleCategoryChange(cat)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all transform hover:scale-102 ${
                 selectedCategory === cat
-                  ? 'bg-[#FFD700] text-[#333333] font-medium'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-white font-semibold shadow-md'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
               {cat}
@@ -130,22 +168,22 @@ export function SearchFilters({
       </Card>
 
       {/* Cities */}
-      <Card>
-        <CardHeader>
+      <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-[#FFD700]/10 to-transparent">
           <CardTitle className="text-lg flex items-center gap-2">
             <MapPin className="w-5 h-5 text-[#FFD700]" />
-            Location
+            Байршил
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 pt-4 max-h-60 overflow-y-auto">
           {cities.map((city) => (
             <button
               key={city}
               onClick={() => handleCityChange(city)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all transform hover:scale-102 ${
                 selectedCity === city
-                  ? 'bg-[#FFD700] text-[#333333] font-medium'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-white font-semibold shadow-md'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
               {city}
@@ -155,22 +193,25 @@ export function SearchFilters({
       </Card>
 
       {/* Sort */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Sort By</CardTitle>
+      <Card className="border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-[#FFD700]/10 to-transparent">
+          <CardTitle className="text-lg">Эрэмбэлэх</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {['name', 'city'].map((sort) => (
+        <CardContent className="space-y-2 pt-4">
+          {[
+            { value: 'name', label: 'Нэрээр' },
+            { value: 'city', label: 'Хотоор' }
+          ].map((sort) => (
             <button
-              key={sort}
-              onClick={() => handleSortChange(sort)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors capitalize ${
-                sortBy === sort
-                  ? 'bg-[#FFD700] text-[#333333] font-medium'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              key={sort.value}
+              onClick={() => handleSortChange(sort.value)}
+              className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all transform hover:scale-102 ${
+                sortBy === sort.value
+                  ? 'bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-white font-semibold shadow-md'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
               }`}
             >
-              {sort}
+              {sort.label}
             </button>
           ))}
         </CardContent>
@@ -180,11 +221,10 @@ export function SearchFilters({
       {hasActiveFilters && (
         <Button
           onClick={clearFilters}
-          variant="outline"
-          className="w-full"
+          className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transition-all"
         >
           <X className="w-4 h-4 mr-2" />
-          Clear All Filters
+          Бүх шүүлтийг арилгах
         </Button>
       )}
     </div>

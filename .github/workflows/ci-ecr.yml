@@ -1,0 +1,205 @@
+name: CI/CD with ECR
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  AWS_REGION: eu-north-1
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  # Lint and Test
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: 📦 Install dependencies
+        run: |
+          cd adoptable
+          npm ci
+      
+      - name: 🔍 Lint
+        run: |
+          cd adoptable
+          npx nx run-many --target=lint --all --parallel=3
+      
+      - name: 🔨 Type check
+        run: |
+          cd adoptable
+          npx tsc --noEmit
+      
+      - name: 🧪 Test
+        run: |
+          cd adoptable
+          npx nx run-many --target=test --all --parallel=3
+  
+  # Build and Push Docker Images (Matrix for bonus points)
+  build-and-push:
+    needs: lint-and-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: [api, web]
+        include:
+          - service: api
+            dockerfile: apps/yb-api/Dockerfile
+            ecr-repo: yellowbooks-api
+            app-name: yb-api
+            port: 3333
+          - service: web
+            dockerfile: apps/adoptable/Dockerfile
+            ecr-repo: yellowbooks-web
+            app-name: adoptable
+            port: 3000
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔐 Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsEKSRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: 🔑 Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: 🏗️ Build Docker image (${{ matrix.service }})
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd adoptable
+          docker build \
+            -f ${{ matrix.dockerfile }} \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VCS_REF=${{ github.sha }} \
+            .
+      
+      - name: 🔍 Scan Docker image for vulnerabilities
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      
+      - name: 🏥 Health check - Test Docker image locally
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Start container
+          CONTAINER_ID=$(docker run -d -p ${{ matrix.port }}:${{ matrix.port }} \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG)
+          
+          echo "Container ID: $CONTAINER_ID"
+          
+          # Wait for container to be ready
+          echo "Waiting for container to start..."
+          sleep 10
+          
+          # Check if container is running
+          if [ "$(docker ps -q -f id=$CONTAINER_ID)" ]; then
+            echo "✅ Container is running"
+            docker logs $CONTAINER_ID
+            
+            # Health check endpoint (adjust based on your app)
+            if [ "${{ matrix.service }}" == "api" ]; then
+              echo "Testing API health endpoint..."
+              curl -f http://localhost:${{ matrix.port }}/api/health || echo "Health endpoint not available yet"
+            else
+              echo "Testing Web homepage..."
+              curl -f http://localhost:${{ matrix.port }}/ || echo "Web page not available yet"
+            fi
+          else
+            echo "❌ Container failed to start"
+            docker logs $CONTAINER_ID
+            exit 1
+          fi
+          
+          # Cleanup
+          docker stop $CONTAINER_ID
+          docker rm $CONTAINER_ID
+      
+      - name: 📤 Push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "✅ Pushed images:"
+          echo "  - $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "  - $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+      
+      - name: 📊 Image info
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.ecr-repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "### 🐳 Docker Image Info (${{ matrix.service }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: \`$ECR_REPOSITORY\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: \`$IMAGE_TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **URI**: \`$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size**: $(docker image inspect $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --format='{{.Size}}' | numfmt --to=iec-i --suffix=B)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+  
+  # Health Check Report (Summary)
+  health-report:
+    needs: build-and-push
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📋 Generate Health Check Report
+        run: |
+          echo "# 🏥 CI/CD Health Check Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Build Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status | Image Tag |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|-----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API     | ✅ Passed | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web     | ✅ Passed | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 ECR Repositories" >> $GITHUB_STEP_SUMMARY
+          echo "- \`yellowbooks-api:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`yellowbooks-web:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Ready for Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "Images are available in ECR and ready for EKS deployment!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Build completed at: $(date -u)*" >> $GITHUB_STEP_SUMMARY

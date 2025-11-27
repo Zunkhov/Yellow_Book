@@ -12,7 +12,7 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: '443'
     
     # Certificate ARN (will be set via CI/CD)
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERT_ID
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:ACCOUNT_ID:certificate/CERT_ID
     
     # Health check
     alb.ingress.kubernetes.io/healthcheck-path: /api/health

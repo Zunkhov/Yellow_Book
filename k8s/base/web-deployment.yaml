@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/yellowbooks-web:latest
+        image: <AWS_ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -36,6 +36,11 @@ spec:
             configMapKeyRef:
               name: yellowbooks-config
               key: NEXT_PUBLIC_API_URL
+        - name: REVALIDATION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: yellowbooks-secrets
+              key: REVALIDATION_SECRET
         resources:
           requests:
             memory: "512Mi"

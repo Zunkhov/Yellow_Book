@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
+// SSG - Generate static params for all entries
 export async function generateStaticParams() {
   try {
     const res = await fetch(`${API_URL}/api/yellow-books`, {
@@ -20,7 +21,7 @@ export async function generateStaticParams() {
     
     const entries: YellowBookEntry[] = await res.json();
     
-    console.log(`🔨 Generating ${entries.length} static pages`);
+    console.log(`🔨 SSG: Generating ${entries.length} static pages`);
     
     return entries.map((entry) => ({
       id: entry.id,
@@ -30,6 +31,10 @@ export async function generateStaticParams() {
     return [];
   }
 }
+
+// Allow dynamic params for new entries
+export const dynamicParams = true;
+export const revalidate = 3600; // Revalidate every hour
 
 async function getEntry(id: string): Promise<YellowBookEntry | null> {
   try {
@@ -124,5 +129,3 @@ export default async function CompanyPage({ params }: { params: { id: string } }
     </div>
   );
 }
-
-export const dynamicParams = true;
