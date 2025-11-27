@@ -22,6 +22,9 @@ COPY shared-contract ./shared-contract
 # Generate Prisma client
 RUN npx prisma generate
 
+# Sync Nx workspace
+RUN npx nx sync
+
 # Build
 RUN npx nx build yb-api --prod
 

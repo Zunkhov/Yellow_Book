@@ -18,6 +18,9 @@ RUN npm ci
 COPY apps/adoptable ./apps/adoptable
 COPY shared-contract ./shared-contract
 
+# Sync Nx workspace
+RUN npx nx sync
+
 # Build Next.js
 RUN npx nx build adoptable --prod
 
