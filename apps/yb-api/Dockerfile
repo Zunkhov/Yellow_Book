@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy root config files
-COPY package*.json ./
+COPY package*.json package-lock.json ./
 COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js ./
 
 # Copy package files for workspaces
