@@ -8,7 +8,7 @@ export default function AboutPage() {
       <div className="prose prose-lg mx-auto text-gray-600 space-y-6">
         <p>
           Yellow Book is your premier business directory, connecting communities with local 
-          companies, services, and organizations. Since our founding, we've been dedicated 
+          companies, services, and organizations. Since our founding, we&apos;ve been dedicated 
           to making it easy for people to discover and connect with businesses in their area.
         </p>
         

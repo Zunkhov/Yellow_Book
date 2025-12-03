@@ -12,7 +12,7 @@ export default function ContactPage() {
             Get in Touch
           </h2>
           <p className="text-gray-600 mb-6">
-            We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
           </p>
           <div className="space-y-4">
             <div>

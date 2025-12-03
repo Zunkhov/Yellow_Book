@@ -14,7 +14,7 @@ export default function NotFound() {
         </h2>
         
         <p className="text-gray-600 mb-8">
-          The company you're looking for doesn't exist or has been removed from our directory.
+          The company you&apos;re looking for doesn&apos;t exist or has been removed from our directory.
         </p>
         
         <Link

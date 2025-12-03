@@ -166,7 +166,7 @@ export default async function SearchPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-gray-600">
             <span className="font-semibold text-[#333333]">{entries.length}</span> компани олдлоо
-            {searchParams.q && <span> - "{searchParams.q}"</span>}
+            {searchParams.q && <span> - &quot;{searchParams.q}&quot;</span>}
           </p>
         </div>
       </div>

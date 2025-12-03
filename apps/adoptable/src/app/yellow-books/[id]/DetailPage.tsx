@@ -130,7 +130,7 @@ export default async function CompanyPage({ params }: { params: { id: string } }
       
       {/* Content */}
       <Suspense fallback={<DetailsSkeleton />}>
-        <CompanyDetails entry={entry} onBack={() => {}} />
+        <CompanyDetails entry={entry} onBack={() => { /* Map interaction handled by Leaflet */ }} />
       </Suspense>
     </div>
   );
