@@ -9,23 +9,30 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
     
-    # Certificate ARN (will be set via CI/CD)
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:ACCOUNT_ID:certificate/CERT_ID
+    # SSL/TLS - will use ACM certificate if available
+    # Comment out if you don't have ACM certificate yet
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:ACCOUNT_ID:certificate/CERT_ID
+    
+    # Use SSL policy for better security
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-2017-01
     
     # Health check
     alb.ingress.kubernetes.io/healthcheck-path: /api/health
     alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
     alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/success-codes: '200'
     
     # Tags
     alb.ingress.kubernetes.io/tags: Environment=production,Project=yellowbooks
+    
+    # Backend protocol
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
   ingressClassName: alb
   rules:
-  - host: yellowbook.mn
-    http:
+  # Default rule - works without custom domain
+  - http:
       paths:
       - path: /api
         pathType: Prefix
@@ -41,13 +48,6 @@ spec:
             name: yb-web-service
             port:
               number: 80
-  - host: api.yellowbook.mn
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
             name: yb-api-service
             port:
               number: 80
