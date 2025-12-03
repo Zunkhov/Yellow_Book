@@ -19,7 +19,7 @@ export default function AboutPage() {
         </p>
         
         <p>
-          Whether you're searching for a restaurant, need professional services, or looking 
+          Whether you&apos;re searching for a restaurant, need professional services, or looking
           to promote your own business, Yellow Book is here to help you make those important connections.
         </p>
 
