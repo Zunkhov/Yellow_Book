@@ -5,11 +5,15 @@ WORKDIR /app
 
 # Copy root config files
 COPY package*.json package-lock.json ./
-COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js ./
+COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js eslint.config.mjs ./
 
 # Copy package files for workspaces
 COPY apps/yb-api/package*.json ./apps/yb-api/
 COPY shared-contract/package*.json ./shared-contract/
+
+# Prevent Cypress from downloading its binary during install inside the container
+ENV CYPRESS_INSTALL_BINARY=0
+ENV SKIP_BINARY_DOWNLOAD_FOR_CYPRESS=1
 
 # Install dependencies
 RUN npm ci

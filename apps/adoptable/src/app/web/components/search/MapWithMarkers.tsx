@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { YellowBookEntry } from '@adoptable/shared-contract';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+// Leaflet marker icon fix
+const createIcon = () =>
+  L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  });
 
 interface MapWithMarkersProps {
   entries: YellowBookEntry[];
@@ -21,121 +25,98 @@ export default function MapWithMarkers({ entries }: MapWithMarkersProps) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!containerRef.current || entries.length === 0) return;
+    setIsMounted(true);
+  }, []);
 
-    // Агуу сайн cleanup хийх
-    const cleanup = () => {
-      // Clean up markers
-      markersRef.current.forEach(marker => {
-        try {
-          marker.remove();
-        } catch (e) {
-          // Ignore
-        }
+  useEffect(() => {
+    if (!isMounted || !containerRef.current || entries.length === 0) return;
+
+    // Calculate center
+    const centerLat = entries.reduce((sum, e) => sum + e.location.lat, 0) / entries.length;
+    const centerLng = entries.reduce((sum, e) => sum + e.location.lng, 0) / entries.length;
+
+    // Cleanup previous map
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    try {
+      // Initialize map
+      mapRef.current = L.map(containerRef.current, {
+        center: [centerLat, centerLng],
+        zoom: 12,
+        scrollWheelZoom: true,
       });
-      markersRef.current = [];
 
-      // Clean up map
-      if (mapRef.current) {
-        try {
-          mapRef.current.off();
-          mapRef.current.remove();
-        } catch (e) {
-          console.error('Error removing map:', e);
-        }
-        mapRef.current = null;
-      }
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+      }).addTo(mapRef.current);
 
-      // DOM-г бүрэн цэвэрлэх - Leaflet internal state арилгах
-      if (containerRef.current) {
-        // Leaflet-ийн internal ID-г арилгах
-        delete (containerRef.current as any)._leaflet_id;
-        containerRef.current.innerHTML = '';
-      }
-    };
+      // Add markers
+      const bounds = L.latLngBounds([]);
+      const icon = createIcon();
 
-    cleanup();
-
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      if (!containerRef.current) return;
-
-      // Calculate center and bounds
-      const lats = entries.map((e) => e.location.lat);
-      const lngs = entries.map((e) => e.location.lng);
-
-      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-
-      try {
-        // Шинэ div үүсгэх - огт цэвэр DOM element
-        const mapDiv = document.createElement('div');
-        mapDiv.style.width = '100%';
-        mapDiv.style.height = '100%';
-        mapDiv.style.borderRadius = '0.5rem';
-        containerRef.current.appendChild(mapDiv);
+      entries.forEach((entry) => {
+        const logo = entry.metadata?.logo;
+        const logoHtml = logo 
+          ? `<img src="${logo}" alt="${entry.name}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />`
+          : `<div style="width: 48px; height: 48px; background: #FFD700; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-weight: bold; font-size: 20px; color: #333;">${entry.name.charAt(0)}</div>`;
         
-        // Initialize map шинэ div дээр
-        mapRef.current = L.map(mapDiv, {
-          center: [centerLat, centerLng],
-          zoom: 12,
-          scrollWheelZoom: true,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors',
-        }).addTo(mapRef.current);
-
-        // Add markers
-        const bounds = L.latLngBounds([]);
-
-        entries.forEach((entry) => {
-          const logo = entry.metadata?.logo;
-          const logoHtml = logo 
-            ? `<img src="${logo}" alt="${entry.name}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;" />`
-            : `<div style="width: 48px; height: 48px; background: #FFD700; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-weight: bold; font-size: 20px; color: #333;">${entry.name.charAt(0)}</div>`;
-          
-          const marker = L.marker([entry.location.lat, entry.location.lng])
-            .addTo(mapRef.current!)
-            .bindPopup(
-              `
-              <div style="min-width: 200px;">
-                ${logoHtml}
-                <h3 style="font-weight: bold; margin-bottom: 8px;">${entry.name}</h3>
-                <p style="font-size: 12px; color: #666; margin-bottom: 8px;">${entry.categories[0]}</p>
-                <p style="font-size: 12px; margin-bottom: 8px;">${entry.address.street}</p>
-                <a 
-                  href="/yellow-books/${entry.id}" 
-                  style="color: #FFD700; font-weight: 600; text-decoration: none;"
-                >
-                  View Details →
-                </a>
-              </div>
+        const marker = L.marker([entry.location.lat, entry.location.lng], { icon })
+          .addTo(mapRef.current!)
+          .bindPopup(
             `
-            );
+            <div style="min-width: 200px;">
+              ${logoHtml}
+              <h3 style="font-weight: bold; margin-bottom: 8px;">${entry.name}</h3>
+              <p style="font-size: 12px; color: #666; margin-bottom: 8px;">${entry.categories[0]}</p>
+              <p style="font-size: 12px; margin-bottom: 8px;">${entry.address.street}</p>
+              <a 
+                href="/yellow-books/${entry.id}" 
+                style="color: #FFD700; font-weight: 600; text-decoration: none;"
+              >
+                View Details →
+              </a>
+            </div>
+          `
+          );
 
-          markersRef.current.push(marker);
-          bounds.extend([entry.location.lat, entry.location.lng]);
-        });
+        markersRef.current.push(marker);
+        bounds.extend([entry.location.lat, entry.location.lng]);
+      });
 
-        // Fit bounds to show all markers
-        if (entries.length > 1) {
-          mapRef.current.fitBounds(bounds, { padding: [50, 50] });
-        } else {
-          mapRef.current.setView([entries[0].location.lat, entries[0].location.lng], 14);
-        }
-      } catch (error) {
-        console.error('Error initializing map:', error);
+      // Fit bounds
+      if (entries.length > 1) {
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      } else {
+        mapRef.current.setView([entries[0].location.lat, entries[0].location.lng], 14);
       }
-    }, 150);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
 
     return () => {
-      clearTimeout(timeoutId);
-      cleanup();
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
-  }, [entries]);
+  }, [isMounted, entries]);
+
+  if (!isMounted) {
+    return (
+      <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+        <p className="text-gray-500">Loading map...</p>
+      </div>
+    );
+  }
 
   if (entries.length === 0) {
     return (
@@ -145,13 +126,5 @@ export default function MapWithMarkers({ entries }: MapWithMarkersProps) {
     );
   }
 
-  const mapKey = `map-${entries.length}-${entries[0]?.id || 'default'}`;
-
-  return (
-    <div 
-      key={mapKey}
-      ref={containerRef} 
-      className="h-96 rounded-lg" 
-    />
-  );
+  return <div ref={containerRef} className="h-96 rounded-lg" />;
 }

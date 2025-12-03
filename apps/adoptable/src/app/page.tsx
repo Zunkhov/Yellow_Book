@@ -6,7 +6,6 @@ import { YellowBookEntry } from '@adoptable/shared-contract';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
 
-// ISR with 60 second revalidation
 export const revalidate = 60;
 
 async function getEntries(): Promise<YellowBookEntry[]> {
@@ -81,15 +80,13 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen">
-      {/* Hero - Static section */}
       <Hero />
 
-      {/* Categories - Streamed with Suspense and ISR */}
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategoriesServer entries={entries} />
       </Suspense>
 
-      {/* Featured Companies - Streamed with Suspense and ISR */}
+  
       <Suspense fallback={<FeaturedCompaniesSkeleton />}>
         <FeaturedCompaniesServer entries={entries} />
       </Suspense>

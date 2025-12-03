@@ -1,4 +1,3 @@
-// apps/adoptable/src/app/yellow-books/search/page.tsx
 import { Suspense } from 'react';
 import { SearchFilters } from '../../web/components/search/SearchFilters';
 import { SearchResults } from '../../web/components/search/SearchResults';
