@@ -22,12 +22,13 @@ RUN npm ci
 COPY apps/adoptable ./apps/adoptable
 COPY shared-contract ./shared-contract
 
-# Sync Nx workspace
-RUN npx nx sync
-
-# Build Next.js (disable daemon in Docker)
+# Disable Nx daemon in Docker environment
 ENV NX_DAEMON=false
-RUN npx nx build adoptable --prod --skip-nx-cache
+ENV NX_SKIP_NX_CACHE=true
+
+# Sync Nx workspace and build
+RUN npx nx sync || true
+RUN npx nx build adoptable --prod
 
 # Production image
 FROM node:20-alpine AS runner

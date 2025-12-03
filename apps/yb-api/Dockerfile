@@ -11,6 +11,10 @@ COPY nx.json tsconfig.base.json tsconfig.json jest.config.ts jest.preset.js esli
 COPY apps/yb-api/package*.json ./apps/yb-api/
 COPY shared-contract/package*.json ./shared-contract/
 
+# Copy TypeScript config files for Nx sync
+COPY apps/yb-api/tsconfig*.json ./apps/yb-api/
+COPY shared-contract/tsconfig*.json ./shared-contract/
+
 # Prevent Cypress from downloading its binary during install inside the container
 ENV CYPRESS_INSTALL_BINARY=0
 ENV SKIP_BINARY_DOWNLOAD_FOR_CYPRESS=1
@@ -26,10 +30,12 @@ COPY shared-contract ./shared-contract
 # Generate Prisma client
 RUN npx prisma generate
 
-# Sync Nx workspace and build (disable daemon and skip cache in Docker)
+# Disable Nx daemon in Docker environment
 ENV NX_DAEMON=false
 ENV NX_SKIP_NX_CACHE=true
-RUN npx nx sync --verbose
+
+# Sync Nx workspace and build
+RUN npx nx sync || true
 RUN npx nx build yb-api --prod
 
 # Production image
