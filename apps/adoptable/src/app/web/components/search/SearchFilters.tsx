@@ -24,8 +24,7 @@ export function SearchFilters({
   currentParams,
 }: SearchFiltersProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
+  
   const [query, setQuery] = useState(currentParams.q || '');
   const [selectedCategory, setSelectedCategory] = useState(
     currentParams.category || ''
