@@ -26,9 +26,10 @@ COPY shared-contract ./shared-contract
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build (disable daemon and skip cache in Docker)
+# Sync Nx workspace and build (disable daemon and skip cache in Docker)
 ENV NX_DAEMON=false
 ENV NX_SKIP_NX_CACHE=true
+RUN npx nx sync --verbose
 RUN npx nx build yb-api --prod
 
 # Production image
