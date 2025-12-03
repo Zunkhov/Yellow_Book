@@ -1,6 +1,6 @@
 # 📒 Yellow Book - Монгол улсын бизнесийн лавлах
 
-[![CI/CD with ECR](https://github.com/Zunkhov/Yellow_Book/actions/workflows/ci-ecr.yml/badge.svg)](https://github.com/Zunkhov/Yellow_Book/actions/workflows/ci-ecr.yml)
+[![CI](https://github.com/Zunkhov/Yellow_Book/actions/workflows/ci.yml/badge.svg)](https://github.com/Zunkhov/Yellow_Book/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
