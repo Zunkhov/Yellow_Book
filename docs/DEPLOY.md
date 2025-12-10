@@ -7,13 +7,15 @@ This guide covers deploying the Yellow Book application to AWS EKS (Elastic Kube
 ## Architecture
 
 ```
-GitHub Actions (OIDC) → AWS IAM Role → EKS Cluster
+GitHub Actions (OIDC) → AWS IAM Role → EKS Cluster (yellowbooks, us-east-1)
                                           ├── Namespace: yellowbooks
-                                          ├── Deployments: yb-api, yb-web
+                                          ├── Deployments: yb-api (2 pods)
                                           ├── Services: ClusterIP
-                                          ├── HPA: Auto-scaling
-                                          ├── Ingress: ALB with HTTPS
-                                          └── RDS PostgreSQL
+                                          ├── HPA: Auto-scaling (2-10 replicas)
+                                          ├── Ingress: ALB with HTTPS/TLS
+                                          ├── Route53: yellowbooks.cloud
+                                          ├── ACM Certificate: HTTPS
+                                          └── RDS PostgreSQL (yellowbooks-db)
 ```
 
 ## Prerequisites
@@ -30,11 +32,11 @@ GitHub Actions (OIDC) → AWS IAM Role → EKS Cluster
 
 ```powershell
 eksctl create cluster \
-  --name yellowbooks-cluster \
-  --region eu-north-1 \
+  --name yellowbooks \
+  --region us-east-1 \
   --version 1.31 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
+  --nodegroup-name workers \
+  --node-type t3.small \
   --nodes 2 \
   --nodes-min 2 \
   --nodes-max 3 \
@@ -57,7 +59,7 @@ eksctl create cluster \
 
 ```bash
 # Update kubectl config
-aws eks update-kubeconfig --name yellowbooks-cluster --region eu-north-1
+aws eks update-kubeconfig --name yellowbooks --region us-east-1
 
 # Check nodes
 kubectl get nodes
@@ -74,7 +76,7 @@ The EKS cluster already has an OIDC provider. We need to create a second one for
 
 ```bash
 # Get cluster OIDC URL
-aws eks describe-cluster --name yellowbooks-cluster --region eu-north-1 \
+aws eks describe-cluster --name yellowbooks --region us-east-1 \
   --query "cluster.identity.oidc.issuer" --output text
 ```
 
@@ -326,22 +328,167 @@ spec:
 - TLS 1.2 policy
 - Health checks to `/api/health`
 
-### 5.8 Migration Job
+### 5.8 Route53 Domain Setup
+
+For production deployments with custom domains:
+
+```bash
+# Create Route53 hosted zone
+aws route53 create-hosted-zone \
+  --name yellowbooks.cloud \
+  --caller-reference $(date +%s)
+
+# Get hosted zone ID
+ZONE_ID=$(aws route53 list-hosted-zones \
+  --query "HostedZones[?Name=='yellowbooks.cloud.'].Id" \
+  --output text)
+```
+
+**Note:** Update nameservers at your domain registrar with the NS records from Route53.
+
+### 5.9 ACM Certificate (HTTPS/TLS)
+
+Request SSL/TLS certificate for your domain:
+
+```bash
+# Request certificate
+CERT_ARN=$(aws acm request-certificate \
+  --domain-name yellowbooks.cloud \
+  --subject-alternative-names "*.yellowbooks.cloud" \
+  --validation-method DNS \
+  --region us-east-1 \
+  --output text --query CertificateArn)
+
+# Get DNS validation record
+aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region us-east-1 \
+  --query "Certificate.DomainValidationOptions[0].ResourceRecord"
+```
+
+**Add validation CNAME to Route53:**
+
+```bash
+# Extract values from previous command
+VALIDATION_NAME="<from_output>"
+VALIDATION_VALUE="<from_output>"
+
+# Create validation record
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $ZONE_ID \
+  --change-batch '{
+    "Changes": [{
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "'$VALIDATION_NAME'",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [{"Value": "'$VALIDATION_VALUE'"}]
+      }
+    }]
+  }'
+```
+
+**Wait for validation** (5-30 minutes):
+
+```bash
+aws acm describe-certificate \
+  --certificate-arn $CERT_ARN \
+  --region us-east-1 \
+  --query "Certificate.Status"
+# Should return: "ISSUED"
+```
+
+### 5.10 Update Ingress with TLS
+
+Update `k8s/base/ingress.yaml` with certificate ARN:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yellowbooks-ingress
+  namespace: yellowbooks
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:973614193125:certificate/e47b9a78-e6cf-4eb0-8b00-09ddd0b67d7e
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-2017-01
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: yb-api-service
+            port:
+              number: 80
+```
+
+**Apply updated Ingress:**
+
+```bash
+kubectl apply -f k8s/base/ingress.yaml
+```
+
+### 5.11 Create Route53 A Record
+
+Point your domain to the ALB:
+
+```bash
+# Get ALB DNS name
+ALB_DNS=$(kubectl get ingress yellowbooks-ingress -n yellowbooks \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+# Create A record (alias to ALB)
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $ZONE_ID \
+  --change-batch '{
+    "Changes": [{
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "yellowbooks.cloud",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z35SXDOTRQ7X7K",
+          "DNSName": "'$ALB_DNS'",
+          "EvaluateTargetHealth": false
+        }
+      }
+    }]
+  }'
+```
+
+**Note:** `Z35SXDOTRQ7X7K` is the hosted zone ID for ALBs in `us-east-1`. For other regions, see [AWS documentation](https://docs.aws.amazon.com/general/latest/gr/elb.html).
+
+**Test HTTPS:**
+
+```bash
+curl https://yellowbooks.cloud/api
+# Should return: {"message":"Welcome to yb-api!"}
+```
+
+### 5.12 Migration Job
 
 ```yaml
 # k8s/base/migration-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: db-migration
+  name: prisma-migration
   namespace: yellowbooks
 spec:
   template:
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
       - name: migration
-        image: <ECR_IMAGE>
+        image: 973614193125.dkr.ecr.us-east-1.amazonaws.com/yellowbooks-api:latest
         command: ["npx", "prisma", "migrate", "deploy"]
         env:
         - name: DATABASE_URL
@@ -418,7 +565,7 @@ The `.github/workflows/deploy-eks.yml` workflow:
 
 ```bash
 # 1. Update kubectl context
-aws eks update-kubeconfig --name yellowbooks-cluster --region eu-north-1
+aws eks update-kubeconfig --name yellowbooks --region us-east-1
 
 # 2. Create namespace
 kubectl apply -f k8s/base/namespace.yaml
