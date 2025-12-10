@@ -1,7 +1,7 @@
 # Create RDS PostgreSQL Database for Yellow Book Application
 
-$CLUSTER_NAME = "yellowbooks-cluster"
-$REGION = "eu-north-1"
+$CLUSTER_NAME = "yellowbooks-us"
+$REGION = "us-east-1"
 $DB_INSTANCE_ID = "yellowbooks-db"
 $DB_NAME = "yellowbooks"
 $DB_USERNAME = "yellowbooks_admin"

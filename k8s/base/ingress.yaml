@@ -10,11 +10,9 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     
-    # SSL/TLS - will use ACM certificate if available
-    # Comment out if you don't have ACM certificate yet
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-north-1:ACCOUNT_ID:certificate/CERT_ID
-    
-    # Use SSL policy for better security
+    # SSL/TLS - ACM certificate for yellowbooks.cloud
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:973614193125:certificate/e47b9a78-e6cf-4eb0-8b00-09ddd0b67d7e
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
     alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-2017-01
     
     # Health check
@@ -46,8 +44,5 @@ spec:
         backend:
           service:
             name: yb-web-service
-            port:
-              number: 80
-            name: yb-api-service
             port:
               number: 80

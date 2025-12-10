@@ -1,7 +1,7 @@
 # Create IAM OIDC Role for GitHub Actions to deploy to EKS
 
-$CLUSTER_NAME = "yellowbooks-cluster"
-$REGION = "eu-north-1"
+$CLUSTER_NAME = "yellowbooks-us"
+$REGION = "us-east-1"
 $GITHUB_ORG = "Zunkhov"
 $GITHUB_REPO = "Yellow_Book"
 $AWS_ACCOUNT_ID = (aws sts get-caller-identity --query Account --output text)

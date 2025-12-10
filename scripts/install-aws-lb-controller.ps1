@@ -1,8 +1,8 @@
 # Install AWS Load Balancer Controller on EKS
 # This controller will create ALB automatically when we deploy Ingress
 
-$CLUSTER_NAME = "yellowbooks-cluster"
-$REGION = "eu-north-1"
+$CLUSTER_NAME = "yellowbooks-us"
+$REGION = "us-east-1"
 $AWS_ACCOUNT_ID = (aws sts get-caller-identity --query Account --output text)
 
 Write-Host "Installing AWS Load Balancer Controller..." -ForegroundColor Green

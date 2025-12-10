@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: aws-load-balancer-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aws-load-balancer-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aws-load-balancer-controller
+    spec:
+      serviceAccountName: aws-load-balancer-controller
+      containers:
+      - name: controller
+        image: public.ecr.aws/eks/aws-load-balancer-controller:v2.7.0
+        args:
+          - --cluster-name=yellowbooks-us
+          - --ingress-class=alb
+          - --feature-gates=EnableIPTargetType=true
+          - --disable-webhook-certificate-generation=true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi

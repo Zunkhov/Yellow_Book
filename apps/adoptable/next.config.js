@@ -15,9 +15,14 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3333/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_URL 
+          ? `${process.env.NEXT_PUBLIC_API_URL.replace('/api', '')}/:path*`
+          : 'http://localhost:3333/api/:path*',
       },
     ];
+  },
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api',
   },
   images: {
     remotePatterns: [

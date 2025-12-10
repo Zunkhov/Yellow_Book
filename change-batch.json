@@ -1,0 +1,1 @@
+{"Changes":[{"Action":"CREATE","ResourceRecordSet":{"Name":"_4b25671e2bb7fc6fbc4c916464ac7482.yellowbooks.cloud.","Type":"CNAME","TTL":300,"ResourceRecords":[{"Value":"_dce77f7431ac267760bf58db39bbfaf2.jkddzztszm.acm-validations.aws."}]}}]}

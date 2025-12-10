@@ -10,7 +10,7 @@ data:
   API_PORT: "3333"
   
   # Database (non-sensitive)
-  DATABASE_HOST: "yellowbooks-db.xxxxxx.eu-north-1.rds.amazonaws.com"
+  DATABASE_HOST: "yellowbooks-db.cu3mw2csm38z.us-east-1.rds.amazonaws.com"
   DATABASE_PORT: "5432"
   DATABASE_NAME: "yellowbooks"
   

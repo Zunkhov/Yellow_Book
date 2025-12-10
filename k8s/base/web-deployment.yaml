@@ -8,7 +8,7 @@ metadata:
     app: yb-web
     tier: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: yb-web
@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: <AWS_ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-web:latest
+        image: 973614193125.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-web:latest-linux-amd64
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

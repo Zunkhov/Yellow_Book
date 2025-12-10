@@ -1,8 +1,8 @@
 # Create EKS Cluster for Yellow Book Application
 # This will take 15-20 minutes to complete
 
-$CLUSTER_NAME = "yellowbooks-cluster"
-$REGION = "eu-north-1"
+$CLUSTER_NAME = "yellowbooks-us"
+$REGION = "us-east-1"
 $K8S_VERSION = "1.31"
 $NODE_TYPE = "t3.medium"
 $NODES_MIN = 2
