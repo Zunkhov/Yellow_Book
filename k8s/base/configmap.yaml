@@ -14,5 +14,7 @@ data:
   DATABASE_PORT: "5432"
   DATABASE_NAME: "yellowbooks"
   
-  # Next.js Config
-  NEXT_PUBLIC_API_URL: "https://api.yellowbook.mn"
+  # Next.js Config  
+  NEXT_PUBLIC_API_URL: "http://yb-api-service/api"
+  # Internal API URL (server-side)
+  API_URL: "http://yb-api-service/api"
