@@ -44,13 +44,14 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copy built artifacts from standalone output
+# Next.js standalone output structure:
+# .next/standalone/ contains the full app with node_modules and apps/ folder
 COPY --from=builder /app/apps/adoptable/.next/standalone ./
-COPY --from=builder /app/apps/adoptable/.next/static ./apps/adoptable/.next/static
+COPY --from=builder /app/apps/adoptable/.next/static ./apps/adoptable/.next/static  
 COPY --from=builder /app/apps/adoptable/public ./apps/adoptable/public
 
 # Expose port
 EXPOSE 3000
 
-# Start server
+# The server.js will be at apps/adoptable/server.js (standalone preserves workspace structure)
 CMD ["node", "apps/adoptable/server.js"]

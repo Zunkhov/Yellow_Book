@@ -11,6 +11,9 @@ const nextConfig = {
     svgr: false,
   },
   output: 'standalone',
+  experimental: {
+    outputFileTracingRoot: require('path').join(__dirname, '../../'),
+  },
   async rewrites() {
     return [
       {
