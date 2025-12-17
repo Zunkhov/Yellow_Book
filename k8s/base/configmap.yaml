@@ -15,6 +15,6 @@ data:
   DATABASE_NAME: "yellowbooks"
   
   # Next.js Config  
-  NEXT_PUBLIC_API_URL: "http://yb-api-service/api"
+  NEXT_PUBLIC_API_URL: "http://yb-api-service.yellowbooks.svc.cluster.local/api"
   # Internal API URL (server-side)
-  API_URL: "http://yb-api-service/api"
+  API_URL: "http://yb-api-service.yellowbooks.svc.cluster.local/api"
