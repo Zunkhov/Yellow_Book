@@ -18,6 +18,9 @@ ENV SKIP_BINARY_DOWNLOAD_FOR_CYPRESS=1
 # Install dependencies
 RUN npm ci
 
+# Copy Prisma schema
+COPY prisma ./prisma
+
 # Copy source code
 COPY apps/adoptable ./apps/adoptable
 COPY shared-contract ./shared-contract
