@@ -85,7 +85,8 @@ async function getFilterOptions(): Promise<{
     ).sort();
 
     return { categories, cities };
-  } catch (error) {
+  } catch (err) {
+    console.error("Filter fetch error:", err);
     return { categories: [], cities: [] };
   }
 }

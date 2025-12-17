@@ -29,8 +29,9 @@ export default function SignInPage() {
         router.push("/");
         router.refresh();
       }
-    } catch (error) {
+    } catch (err) {
       setError("Something went wrong");
+      console.error("Sign in error:", err);
     } finally {
       setLoading(false);
     }
@@ -131,7 +132,7 @@ export default function SignInPage() {
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <a href="#" className="text-[#FFD700] hover:text-[#E5C100] font-medium">
               Sign up
             </a>
