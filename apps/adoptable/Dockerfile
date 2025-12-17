@@ -53,4 +53,4 @@ COPY --from=builder /app/apps/adoptable/public ./apps/adoptable/public
 EXPOSE 3000
 
 # Start server
-CMD ["node", "apps/adoptable/server.js"]
+CMD ["node", "server.js"]
