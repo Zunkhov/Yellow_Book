@@ -45,12 +45,12 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Copy built artifacts from standalone output
-COPY --from=builder /app/apps/adoptable/.next/standalone/apps/adoptable ./
-COPY --from=builder /app/apps/adoptable/.next/static ./.next/static
-COPY --from=builder /app/apps/adoptable/public ./public
+COPY --from=builder /app/apps/adoptable/.next/standalone ./
+COPY --from=builder /app/apps/adoptable/.next/static ./apps/adoptable/.next/static
+COPY --from=builder /app/apps/adoptable/public ./apps/adoptable/public
 
 # Expose port
 EXPOSE 3000
 
 # Start server
-CMD ["node", "server.js"]
+CMD ["node", "apps/adoptable/server.js"]
