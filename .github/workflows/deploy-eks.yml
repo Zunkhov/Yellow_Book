@@ -1,0 +1,142 @@
+name: Deploy to EKS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 973614193125.dkr.ecr.us-east-1.amazonaws.com
+  EKS_CLUSTER_NAME: yellowbooks
+  NAMESPACE: yellowbooks
+  IAM_ROLE_ARN: arn:aws:iam::973614193125:role/GitHubActions-EKS-Deploy
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, web]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push API image
+        if: matrix.service == 'api'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/yb-api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/yellowbooks-api:latest
+            ${{ env.ECR_REGISTRY }}/yellowbooks-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web image
+        if: matrix.service == 'web'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/adoptable/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/yellowbooks-web:latest
+            ${{ env.ECR_REGISTRY }}/yellowbooks-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.31.0'
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/base/namespace.yaml
+          kubectl apply -f k8s/base/configmap.yaml
+          kubectl apply -f k8s/base/secret.yaml
+          kubectl apply -f k8s/base/api-deployment.yaml
+          kubectl apply -f k8s/base/api-service.yaml
+          kubectl apply -f k8s/base/web-deployment.yaml
+          kubectl apply -f k8s/base/web-service.yaml
+          kubectl apply -f k8s/base/hpa.yaml
+          kubectl apply -f k8s/base/ingress.yaml
+
+      - name: Run database migration
+        run: |
+          kubectl delete job prisma-migration -n ${{ env.NAMESPACE }} --ignore-not-found=true
+          kubectl apply -f k8s/base/migration-job.yaml
+          kubectl wait --for=condition=complete --timeout=300s job/prisma-migration -n ${{ env.NAMESPACE }}
+
+      - name: Restart deployments to use new images
+        run: |
+          kubectl rollout restart deployment/yb-api -n ${{ env.NAMESPACE }}
+          kubectl rollout restart deployment/yb-web -n ${{ env.NAMESPACE }}
+
+      - name: Wait for deployments
+        run: |
+          kubectl rollout status deployment/yb-api -n ${{ env.NAMESPACE }} --timeout=5m
+          kubectl rollout status deployment/yb-web -n ${{ env.NAMESPACE }} --timeout=5m
+
+      - name: Get deployment status
+        run: |
+          echo "=== Pods Status ==="
+          kubectl get pods -n ${{ env.NAMESPACE }}
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -n ${{ env.NAMESPACE }}
+          echo ""
+          echo "=== Ingress ==="
+          kubectl get ingress -n ${{ env.NAMESPACE }}
+          echo ""
+          echo "=== HPA Status ==="
+          kubectl get hpa -n ${{ env.NAMESPACE }}
+
+      - name: Get Ingress URL
+        run: |
+          echo "=== Application URL ==="
+          kubectl get ingress yellowbooks-ingress -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+          echo ""
