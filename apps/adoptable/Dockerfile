@@ -26,6 +26,9 @@ COPY shared-contract ./shared-contract
 ENV NX_DAEMON=false
 ENV NX_SKIP_NX_CACHE=true
 
+# Generate Prisma client
+RUN npx prisma generate
+
 # Sync Nx workspace and build
 RUN npx nx sync || true
 RUN npx nx build adoptable --prod
