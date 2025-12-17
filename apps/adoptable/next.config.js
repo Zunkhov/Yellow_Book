@@ -14,10 +14,10 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
+        source: '/api/yellow-books/:path*',
         destination: process.env.NEXT_PUBLIC_API_URL 
-          ? `${process.env.NEXT_PUBLIC_API_URL.replace('/api', '')}/:path*`
-          : 'http://localhost:3333/api/:path*',
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api/yellow-books/:path*`
+          : 'http://localhost:3333/api/yellow-books/:path*',
       },
     ];
   },

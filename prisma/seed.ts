@@ -102,6 +102,19 @@ async function main() {
     console.log(`Created entry: ${created.name}`);
   }
   
+  // Seed admin user
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@adoptable.com' },
+    update: {},
+    create: {
+      email: 'admin@adoptable.com',
+      name: 'Admin User',
+      role: 'admin',
+      emailVerified: new Date(),
+    },
+  });
+  console.log(`Created admin user: ${adminUser.email}`);
+  
   console.log('Seeding completed!');
 }
 

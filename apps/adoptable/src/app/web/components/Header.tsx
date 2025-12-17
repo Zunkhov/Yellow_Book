@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AuthButton } from '@/components/AuthButton';
 
 export function Header() {
   const pathname = usePathname();
@@ -62,6 +63,15 @@ export function Header() {
               Companies
             </Link>
             <Link
+              href="/yellow-books/assistant"
+              className={`flex items-center gap-1 text-sm font-medium transition-colors hover:text-[#FFD700] ${
+                isActive('/yellow-books/assistant') ? 'text-[#FFD700]' : 'text-[#333333]'
+              }`}
+            >
+              <span>🤖</span>
+              AI Assistant
+            </Link>
+            <Link
               href="/about"
               className={`text-sm font-medium transition-colors hover:text-[#FFD700] ${
                 isActive('/about') ? 'text-[#FFD700]' : 'text-[#333333]'
@@ -77,6 +87,8 @@ export function Header() {
             >
               Contact
             </Link>
+            
+            <AuthButton />
           </nav>
 
           {/* Mobile Menu Button */}

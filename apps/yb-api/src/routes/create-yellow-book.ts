@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { YellowBookEntrySchema } from '@adoptable/shared-contract';
 import { z } from 'zod';
+import { getJobQueue, JobTypes, EmbeddingJobPayload } from '../services/job-queue.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -31,6 +32,41 @@ router.post('/', async (req, res, next) => {
         longitude: new Decimal(validated.location.lng.toString()),
       },
     });
+
+    // 🚀 Enqueue embedding generation job (async)
+    try {
+      const jobQueue = getJobQueue();
+      const embeddingText = [
+        entry.name,
+        entry.description,
+        ...entry.categories,
+        entry.city,
+      ].join(' ');
+
+      const payload: EmbeddingJobPayload = {
+        businessId: entry.id,
+        text: embeddingText,
+        attempt: 1,
+        enqueuedAt: new Date().toISOString(),
+      };
+
+      const jobId = await jobQueue.send(
+        JobTypes.GENERATE_EMBEDDING,
+        payload,
+        {
+          singletonKey: `embedding:${entry.id}`, // Prevent duplicates
+          retryLimit: 5,
+          retryBackoff: true,
+          retryDelay: 2,
+        }
+      );
+
+      console.log(`📨 Enqueued embedding job ${jobId} for business ${entry.id}`);
+    } catch (jobError) {
+      // Don't fail the API request if job enqueueing fails
+      console.error('⚠️ Failed to enqueue embedding job:', jobError);
+      // Business entry is still created successfully
+    }
 
     // Transform response
     const response = {

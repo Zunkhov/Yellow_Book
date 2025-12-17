@@ -10,15 +10,23 @@ export const revalidate = 60;
 
 async function getEntries(): Promise<YellowBookEntry[]> {
   try {
+    console.log('Fetching from:', `${API_URL}/api/yellow-books`);
     const res = await fetch(`${API_URL}/api/yellow-books`, {
       next: { revalidate: 60 },
+      cache: 'no-store',
     });
 
+    console.log('Response status:', res.status);
+    
     if (!res.ok) {
-      throw new Error('Failed to fetch entries');
+      const errorText = await res.text();
+      console.error('Response error:', errorText);
+      throw new Error(`Failed to fetch entries: ${res.status} ${errorText}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    console.log('Fetched entries:', data.length);
+    return data;
   } catch (error) {
     console.error('Error fetching entries:', error);
     return [];

@@ -27,7 +27,42 @@
 
 ---
 
-## 🚀 Quick Start
+## � Docker Images (AWS ECR)
+
+Container images are automatically built and pushed to AWS ECR on every push to `main`:
+
+**API Image**:
+```
+973614193125.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-api:latest
+```
+
+**Web Image**:
+```
+973614193125.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-web:latest
+```
+
+### Image Tags
+- `latest` - Latest successful build from main branch
+- `latest-linux-amd64` - Latest AMD64 platform build
+- `latest-linux-arm64` - Latest ARM64 platform build  
+- `<commit-sha>-linux-amd64` - Specific commit version for AMD64
+- `<commit-sha>-linux-arm64` - Specific commit version for ARM64
+
+### Pull Images
+```bash
+# Login to ECR
+aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 973614193125.dkr.ecr.eu-north-1.amazonaws.com
+
+# Pull API image
+docker pull 973614193125.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-api:latest
+
+# Pull Web image
+docker pull 973614193125.dkr.ecr.eu-north-1.amazonaws.com/yellowbooks-web:latest
+```
+
+---
+
+## �🚀 Quick Start
 
 ### Prerequisites
 - Node.js 20+
